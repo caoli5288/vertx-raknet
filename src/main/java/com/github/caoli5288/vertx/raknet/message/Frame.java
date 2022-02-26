@@ -9,37 +9,36 @@ import org.jetbrains.annotations.NotNull;
 public class Frame implements Serializable {
 
     private Reliable reliable;
-    private int frameId;
+    private int id;
     private int sequenceId;
-    private int orderId;
-    private int orderChannel;
+    private int channel;
     // fragmented
-    private boolean fragmented;
-    private int fragmentSize;
+    private boolean split;
+    private int splitSize;
     private int splitterId;
-    private int fragmentId;
+    private int splitId;
     private ByteBuf body;
 
     @Override
     public void decode(@NotNull ByteBuf buf) {
         int flags = buf.readUnsignedByte();
         reliable = Reliable.valueOf(flags >> 5);
-        fragmented = (flags & 16) == 16;
+        split = (flags & 16) == 16;
         int c = buf.readUnsignedShort() / 8;// body lengths
         if (reliable.isReliable()) {
-            frameId = buf.readUnsignedMediumLE();
+            id = buf.readUnsignedMediumLE();
         }
         if (reliable.isSequenced()) {
             sequenceId = buf.readUnsignedMediumLE();
         }
         if (reliable.isOrdered()) {
-            orderId = buf.readUnsignedMediumLE();
-            orderChannel = buf.readByte();
+            sequenceId = buf.readUnsignedMediumLE();
+            channel = buf.readByte();
         }
-        if (fragmented) {
-            fragmentSize = buf.readInt();
+        if (split) {
+            splitSize = buf.readInt();
             splitterId = buf.readShort();
-            fragmentId = buf.readInt();
+            splitId = buf.readInt();
         }
         body = buf.readBytes(c);
     }
@@ -53,25 +52,25 @@ public class Frame implements Serializable {
 
     public static void encode(ByteBuf buf, Frame frame) {
         int flags = frame.getReliable().ordinal() << 5;
-        if (frame.isFragmented()) {
+        if (frame.isSplit()) {
             flags = Utils.setBitTo1(flags, 4);
         }
         buf.writeByte(flags);
         buf.writeShort(frame.getBody().readableBytes() << 3);
         if (frame.getReliable().isReliable()) {
-            buf.writeMediumLE(frame.frameId);
+            buf.writeMediumLE(frame.getId());
         }
         if (frame.getReliable().isSequenced()) {
             buf.writeMediumLE(frame.sequenceId);
         }
         if (frame.getReliable().isOrdered()) {
-            buf.writeMediumLE(frame.orderId);
-            buf.writeByte(frame.orderChannel);
+            buf.writeMediumLE(frame.sequenceId);
+            buf.writeByte(frame.channel);
         }
-        if (frame.isFragmented()) {
-            buf.writeInt(frame.fragmentSize);
+        if (frame.isSplit()) {
+            buf.writeInt(frame.splitSize);
             buf.writeShort(frame.splitterId);
-            buf.writeInt(frame.fragmentId);
+            buf.writeInt(frame.splitId);
         }
         buf.writeBytes(frame.getBody());
     }

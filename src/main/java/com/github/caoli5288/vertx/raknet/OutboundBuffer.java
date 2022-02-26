@@ -44,10 +44,10 @@ class OutboundBuffer {
                 fp.setSequence(seq());
                 Frame frame = frame();
                 // fragmented
-                frame.setFragmented(true);
+                frame.setSplit(true);
                 frame.setSplitterId(splitterId++);
-                frame.setFragmentId(i);
-                frame.setFragmentSize(count);
+                frame.setSplitId(i);
+                frame.setSplitSize(count);
                 // body
                 if (buf.readableBytes() <= dataSize) {
                     frame.setBody(buf.readSlice(buf.readableBytes()));
@@ -65,7 +65,7 @@ class OutboundBuffer {
         int j = frameId++;
         Frame frame = new Frame();
         frame.setReliable(Reliable.RELIABLE);
-        frame.setFrameId(j);
+        frame.setId(j);
         return frame;
     }
 

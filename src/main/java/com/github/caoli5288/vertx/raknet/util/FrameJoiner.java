@@ -15,19 +15,15 @@ public class FrameJoiner {
         this.count = count;
     }
 
-    public void handle(Frame frame) {
-        map.put(frame.getFragmentId(), frame);
-    }
-
-    public boolean isComplete() {
-        return map.size() == count;
-    }
-
-    public ByteBuf join() {
-        ByteBuf buffer = Utils.buffer();
-        for (int i = 0; i < count; i++) {
-            buffer.writeBytes(map.get(i).getBody());
+    public void join(Frame frame) {
+        map.put(frame.getSplitId(), frame);
+        if (map.size() == count) {
+            ByteBuf buf = Utils.buffer();
+            for (int i = 0; i < count; i++) {
+                buf.writeBytes(map.get(i).getBody());
+            }
+            frame.setSplit(false);
+            frame.setBody(buf);
         }
-        return buffer;
     }
 }

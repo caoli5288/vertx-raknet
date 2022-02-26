@@ -5,22 +5,31 @@ import com.github.caoli5288.vertx.raknet.message.AckRecord;
 import com.github.caoli5288.vertx.raknet.message.Frame;
 import com.github.caoli5288.vertx.raknet.message.FrameSetPacket;
 import com.github.caoli5288.vertx.raknet.message.NAck;
+import com.github.caoli5288.vertx.raknet.message.Reliable;
 import com.github.caoli5288.vertx.raknet.util.FrameJoiner;
+import com.github.caoli5288.vertx.raknet.util.InboundOrder;
 import com.github.caoli5288.vertx.raknet.util.Utils;
 import io.vertx.core.Handler;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 class InboundBuffer implements Handler<FrameSetPacket> {
 
     private final Map<Integer, FrameJoiner> joiners = new HashMap<>();
+    private final List<InboundOrder> orders = new ArrayList<>();
+    private final InboundOrder sequencer = new InboundOrder();
     private final RakNetSession session;
     private int mSequence = -1;
 
     public InboundBuffer(RakNetSession session) {
         this.session = session;
+        for (int i = 0; i < 8; i++) {
+            orders.add(new InboundOrder());
+        }
     }
 
     @Override
@@ -54,15 +63,40 @@ class InboundBuffer implements Handler<FrameSetPacket> {
     }
 
     private void handle(Frame frame) {
-        if (frame.isFragmented()) {
-            FrameJoiner joiner = joiners.computeIfAbsent(frame.getSplitterId(), s -> new FrameJoiner(frame.getFragmentSize()));
-            joiner.handle(frame);
-            if (joiner.isComplete()) {
+        if (frame.isSplit()) {
+            FrameJoiner joiner = joiners.computeIfAbsent(frame.getSplitterId(), s -> new FrameJoiner(frame.getSplitSize()));
+            joiner.join(frame);
+            if (!frame.isSplit()) {
                 joiners.remove(frame.getSplitterId());
-                session.handle0(joiner.join());
+                handle2(frame);
             }
-        } else {// TODO buffered
-            session.handle0(frame.getBody());
+        } else {
+            handle2(frame);
         }
+    }
+
+    private void handle2(Frame frame) {
+        InboundOrder order = getOrder(frame);
+        if (order == null) {
+            session.handle0(frame.getBody());
+        } else {
+            List<Frame> frames = order.handle(frame);
+            if (!frames.isEmpty()) {
+                for (Frame f : frames) {
+                    session.handle0(f.getBody());
+                }
+            }
+        }
+    }
+
+    private InboundOrder getOrder(Frame frame) {
+        Reliable reliable = frame.getReliable();
+        if (reliable.isOrdered()) {
+            return orders.get(frame.getChannel());
+        }
+        if (reliable.isSequenced()) {
+            return sequencer;
+        }
+        return null;
     }
 }

@@ -134,13 +134,13 @@ public class RakNetSession implements Handler<DatagramPacket> {
     }
 
     private void handle(FrameSetPacket packet) {
-        if (state == State.CONNECTING) {
+        if (state == State.ESTABLISHED || state == State.CONNECTING) {
             inbound.handle(packet);
         }
     }
 
     private void handle(OpenConnectionRequest2 request2) {
-        Utils.checkState(state == State.SYNC);
+        Utils.checkState(state == State.SYNC && mode == Mode.SERVER);
         state = State.CONNECTING;
         // reply
         int mtu = request2.getMtu();
@@ -155,7 +155,7 @@ public class RakNetSession implements Handler<DatagramPacket> {
     }
 
     private void handle(OpenConnectionReply2 reply2) {
-        Utils.checkState(state == State.SYNC);
+        Utils.checkState(state == State.SYNC && mode == Mode.CLIENT);
         state = State.CONNECTING;
         // setup IO buffers
         inbound = new InboundBuffer(this);
@@ -167,7 +167,7 @@ public class RakNetSession implements Handler<DatagramPacket> {
     }
 
     private void handle(OpenConnectionRequest request) {
-        Utils.checkState(state == State.NEW);
+        Utils.checkState(state == State.NEW && mode == Mode.SERVER);
         // Cannot connect to old server
         if (request.getVersion() > Constants.SERVER_PROTOCOL_VERSION) {
             IncompatibleProtocol protocol = new IncompatibleProtocol();
@@ -187,6 +187,7 @@ public class RakNetSession implements Handler<DatagramPacket> {
     }
 
     private void handle(OpenConnectionReply reply) {
+        Utils.checkState(state == State.OPEN && mode == Mode.CLIENT);
         state = State.SYNC;
         connector.setMtu(reply.getMtu());
         connector.setCd(2);
@@ -236,9 +237,7 @@ public class RakNetSession implements Handler<DatagramPacket> {
     }
 
     private void handle0(NewIncomingConnection handshake) {
-        if (state != State.CONNECTING) {
-            return;
-        }
+        Utils.checkState(state == State.CONNECTING && mode == Mode.SERVER);
         state = State.ESTABLISHED;
         if (connectedHandler != null) {
             connectedHandler.handle(this);
@@ -252,9 +251,7 @@ public class RakNetSession implements Handler<DatagramPacket> {
     }
 
     private void handle0(ConnectionRequestAccepted handshake) {
-        if (state != State.CONNECTING) {
-            return;
-        }
+        Utils.checkState(state == State.CONNECTING && mode == Mode.CLIENT);
         state = State.ESTABLISHED;
         NewIncomingConnection pong = new NewIncomingConnection();
         pong.setAddress(handshake.getAddress());
@@ -264,6 +261,7 @@ public class RakNetSession implements Handler<DatagramPacket> {
     }
 
     private void handle0(ConnectionRequest request) {
+        Utils.checkState(state == State.CONNECTING && mode == Mode.SERVER);
         ConnectionRequestAccepted handshake = new ConnectionRequestAccepted();
         handshake.setAddress(Utils.resolve(address));
         handshake.setTime(request.getTime());
