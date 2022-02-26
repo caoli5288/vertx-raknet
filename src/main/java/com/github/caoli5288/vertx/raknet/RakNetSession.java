@@ -25,6 +25,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramPacket;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.SocketAddress;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
@@ -279,7 +280,9 @@ public class RakNetSession implements Handler<DatagramPacket> {
 
     public void send(@NotNull UserData data) {
         Utils.checkState(state == State.ESTABLISHED);
-        outbound.send(data.encode());
+        ContextInternal context = (ContextInternal) net.getContext();
+        // Will check is in context automatic
+        context.execute(() -> outbound.send(data.encode()));
     }
 
     public void send(@NotNull Buffer buffer) {
@@ -301,11 +304,11 @@ public class RakNetSession implements Handler<DatagramPacket> {
         Utils.checkState(state == State.NEW, "State is " + state);
         Promise<UnconnectedPong> f = Promise.promise();
         // ping handler
-        pingHandler = event -> {
+        pingHandler(event -> {
             if (f.tryComplete(event)) {
                 handler.handle(f.future());
             }
-        };
+        });
         // setup timeout task
         net.getVertx().setTimer(4000, event -> {
             if (f.tryFail("timeout")) {

@@ -3,6 +3,7 @@ package com.github.caoli5288.vertx.raknet;
 import com.github.caoli5288.vertx.raknet.util.Utils;
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -10,14 +11,15 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramPacket;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.net.SocketAddress;
+import lombok.AccessLevel;
 import lombok.Getter;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class RakNet {
 
-    private final Map<SocketAddress, RakNetSession> sessions = new ConcurrentHashMap<>();
+    private final Map<SocketAddress, RakNetSession> sessions = new HashMap<>();
     private final DatagramSocket so;
     @Getter
     private final Vertx vertx;
@@ -27,6 +29,8 @@ public class RakNet {
     @Getter
     private RakNetSession session;// client mode
     private Handler<RakNetSession> connectHandler;
+    @Getter(AccessLevel.PACKAGE)
+    private Context context;
 
     RakNet(Vertx vertx, RakNetOptions options) {
         this.vertx = vertx;
@@ -38,6 +42,7 @@ public class RakNet {
         Utils.checkState(so.localAddress() == null, "Connected so");
         so.listen(port, host, event -> {
             if (event.succeeded()) {
+                context = vertx.getOrCreateContext();// instanceof EventLoopContext
                 handler.handle(Future.succeededFuture(this));
                 so.handler(this::handle);
             } else {
@@ -53,7 +58,7 @@ public class RakNet {
         so.listen(0, "0.0.0.0", event -> {
             if (event.succeeded()) {
                 // bind success
-                // connect
+                context = vertx.getOrCreateContext();
                 session = new RakNetSession(this, SocketAddress.inetSocketAddress(port, host), RakNetSession.Mode.CLIENT);
                 // handle data
                 so.handler(session);
