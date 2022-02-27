@@ -348,7 +348,7 @@ public class RakNetSession implements Handler<DatagramPacket> {
         }
         send0(new Disconnect().encode());
         state = State.CLOSED;
-        net.close(address);
+        net.close(this);
         if (closedHandler != null) {
             closedHandler.handle(this);
         }

@@ -10,6 +10,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramPacket;
 import io.vertx.core.datagram.DatagramSocket;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.SocketAddress;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -75,8 +76,12 @@ public class RakNet {
         return this;
     }
 
-    void close(SocketAddress client) {
-        sessions.remove(client);
+    void close(RakNetSession session) {
+        if (session.getMode() == RakNetSession.Mode.CLIENT) {
+            close();
+        } else {
+            ((ContextInternal) context).execute(() -> sessions.remove(session.getAddress()));
+        }
     }
 
     void send(SocketAddress client, ByteBuf buf, Handler<AsyncResult<Void>> handler) {
@@ -96,6 +101,10 @@ public class RakNet {
 
     public void close(Handler<AsyncResult<Void>> handler) {
         so.close(handler);
+    }
+
+    public Future<Void> close() {
+        return so.close();
     }
 
     public static RakNet create(Vertx vertx, RakNetOptions options) {
