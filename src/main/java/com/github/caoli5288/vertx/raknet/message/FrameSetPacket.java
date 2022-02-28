@@ -37,7 +37,7 @@ public class FrameSetPacket implements Serializable {
     @Override
     public @NotNull ByteBuf encode() {
         ByteBuf buf = Utils.buffer();
-        buf.writeByte(Constants.ID_RN_FRAME_SET_PACKET_END);
+        buf.writeByte(Constants.ID_RN_FRAME_SET_PACKET_4);
         buf.writeMediumLE(sequence);
         for (Frame frame : frames) {
             Frame.encode(buf, frame);

@@ -1,10 +1,24 @@
-# vertx-raknet
+# vertx-raknet[![](https://jitpack.io/v/caoli5288/vertx-raknet.svg)](https://jitpack.io/#caoli5288/vertx-raknet)
+
+## Usage
+
+```groovy
+allprojects {
+    repositories {
+        maven { url 'https://jitpack.io' }
+    }
+}
+
+dependencies {
+    implementation 'com.github.caoli5288:vertx-raknet:master-SNAPSHOT'
+}
+```
 
 ## Server
 
 ```groovy
 def server = RakNet.create(Vertx.vertx(), new RakNetOptions())
-server.listen "0.0.0.0", 20000, {
+server.listen "0.0.0.0", 19132, {
     if (it.succeeded()) {
         it.result().connectHandler { session ->
             session.pingHandler { pong -> pong.setInfo("MCPE;MOTD;390;1.14.60;0;10;13253860892328930865;MOTD2;Survival;") }
@@ -25,7 +39,7 @@ server.listen "0.0.0.0", 20000, {
 
 ```groovy
 def client = RakNet.create(Vertx.vertx(), new RakNetOptions())
-client.open "127.0.0.1", 20000, {
+client.open "127.0.0.1", 19132, {
     if (it.succeeded()) {
         def session = it.result()
         session.ping { pong ->

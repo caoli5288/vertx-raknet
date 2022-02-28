@@ -87,24 +87,30 @@ public class RakNetSession implements Handler<DatagramPacket> {
             case Constants.ID_RN_UNCONNECTED_PONG:// 28
                 handle(new UnconnectedPong(data));
                 break;
-            case Constants.ID_RN_FRAME_SET_PACKET_START:// start
-            case 129:
-            case 130:
-            case 131:
-            case 132:
-            case 133:
-            case 134:
-            case 135:
-            case 136:
-            case 137:
-            case 138:
-            case Constants.ID_RN_FRAME_SET_PACKET_END:// end
+            case Constants.ID_RN_FRAME_SET_PACKET_0:// start
+            case Constants.ID_RN_FRAME_SET_PACKET_1:
+            case Constants.ID_RN_FRAME_SET_PACKET_2:
+            case Constants.ID_RN_FRAME_SET_PACKET_3:
+            case Constants.ID_RN_FRAME_SET_PACKET_4:
+            case Constants.ID_RN_FRAME_SET_PACKET_5:
+            case Constants.ID_RN_FRAME_SET_PACKET_6:
+            case Constants.ID_RN_FRAME_SET_PACKET_7:
+            case Constants.ID_RN_FRAME_SET_PACKET_8:
+            case Constants.ID_RN_FRAME_SET_PACKET_9:
+            case Constants.ID_RN_FRAME_SET_PACKET_10:
+            case Constants.ID_RN_FRAME_SET_PACKET_11:
+            case Constants.ID_RN_FRAME_SET_PACKET_12:
+            case Constants.ID_RN_FRAME_SET_PACKET_13:
+            case Constants.ID_RN_FRAME_SET_PACKET_14:
+            case Constants.ID_RN_FRAME_SET_PACKET_15:
                 handle(new FrameSetPacket(data));
                 break;
             case Constants.ID_RN_N_ACK:// 160
                 handle(new NAck(data));
+                break;
             case Constants.ID_RN_ACK:// 192
                 handle(new Ack(data));
+                break;
         }
         Utils.checkState(data.readableBytes() == 0);
     }
