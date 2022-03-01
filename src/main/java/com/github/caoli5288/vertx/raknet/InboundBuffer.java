@@ -6,22 +6,20 @@ import com.github.caoli5288.vertx.raknet.message.Frame;
 import com.github.caoli5288.vertx.raknet.message.FrameSetPacket;
 import com.github.caoli5288.vertx.raknet.message.NAck;
 import com.github.caoli5288.vertx.raknet.message.Reliability;
-import com.github.caoli5288.vertx.raknet.util.FrameJoiner;
+import com.github.caoli5288.vertx.raknet.util.InboundJoiner;
 import com.github.caoli5288.vertx.raknet.util.InboundOrder;
 import com.github.caoli5288.vertx.raknet.util.Utils;
 import io.vertx.core.Handler;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 class InboundBuffer implements Handler<FrameSetPacket> {
 
-    private final Map<Integer, FrameJoiner> joiners = new HashMap<>();
     private final List<InboundOrder> orders = new ArrayList<>();
     private final InboundOrder sequencer = new InboundOrder();
+    private final InboundJoiner joiner = new InboundJoiner();
     private final RakNetSession session;
     private int mSequence = -1;
 
@@ -64,11 +62,8 @@ class InboundBuffer implements Handler<FrameSetPacket> {
 
     private void handle(Frame frame) {
         if (frame.isSplit()) {
-            // TODO check already proceed
-            FrameJoiner joiner = joiners.computeIfAbsent(frame.getSplitterId(), s -> new FrameJoiner(frame.getSplitSize()));
-            joiner.join(frame);
+            joiner.handle(frame);
             if (!frame.isSplit()) {
-                joiners.remove(frame.getSplitterId());
                 handle2(frame);
             }
         } else {
@@ -82,8 +77,8 @@ class InboundBuffer implements Handler<FrameSetPacket> {
             session.handle0(frame.getBody());
         } else {
             List<Frame> frames = order.handle(frame);
-            if (!frames.isEmpty()) {
-                for (Frame f : frames) {
+            if (frames != null) {
+                for (Frame f : frames) {// always not empty if not null
                     session.handle0(f.getBody());
                 }
             }

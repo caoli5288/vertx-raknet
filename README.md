@@ -14,7 +14,7 @@ dependencies {
 }
 ```
 
-## Server
+### Server
 
 ```groovy
 def server = RakNet.create(Vertx.vertx(), new RakNetOptions())
@@ -35,9 +35,11 @@ server.listen "0.0.0.0", 19132, {
 }
 ```
 
-## Client
+### Client
 
 ```groovy
+import com.github.caoli5288.vertx.raknet.message.Reliability
+
 def client = RakNet.create(Vertx.vertx(), new RakNetOptions())
 client.open "127.0.0.1", 19132, {
     if (it.succeeded()) {
@@ -48,7 +50,7 @@ client.open "127.0.0.1", 19132, {
                 session.connect {
                     // when connected
                     if (it.succeeded()) {
-                        session.send(Buffer.buffer("Hello"))
+                        session.send(Buffer.buffer("Hello"), Reliability.RELIABLE_ORDERED)
                     }
                 }
             }

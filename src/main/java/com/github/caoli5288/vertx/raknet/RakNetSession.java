@@ -234,6 +234,7 @@ public class RakNetSession implements Handler<DatagramPacket> {
                 break;
             case Constants.ID_USER_PACKET:
                 handle0(new UserData(data));
+                break;
         }
     }
 
