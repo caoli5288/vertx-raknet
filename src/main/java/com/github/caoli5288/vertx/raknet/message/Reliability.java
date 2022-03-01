@@ -2,11 +2,11 @@ package com.github.caoli5288.vertx.raknet.message;
 
 import lombok.Getter;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.List;
 
 @Getter
-public enum Reliable {
+public enum Reliability {
 
     UNRELIABLE(false, false, false),
     UNRELIABLE_SEQUENCED(false, true, true),
@@ -17,25 +17,23 @@ public enum Reliable {
     RELIABLE_ACK(true, false, false),
     RELIABLE_ORDERED_ACK(true, true, false);
 
-    private static final Map<Integer, Reliable> BY_ID = new HashMap<>();
+    private static final List<Reliability> BY_ID;
 
     static {
-        for (Reliable mode : Reliable.values()) {
-            BY_ID.put(mode.ordinal(), mode);
-        }
+        BY_ID = Arrays.asList(values());
     }
 
     private final boolean reliable;
     private final boolean ordered;
     private final boolean sequenced;
 
-    Reliable(boolean reliable, boolean ordered, boolean sequenced) {
+    Reliability(boolean reliable, boolean ordered, boolean sequenced) {
         this.reliable = reliable;
         this.ordered = ordered;
         this.sequenced = sequenced;
     }
 
-    public static Reliable valueOf(int id) {
+    public static Reliability valueOf(int id) {
         return BY_ID.get(id);
     }
 }

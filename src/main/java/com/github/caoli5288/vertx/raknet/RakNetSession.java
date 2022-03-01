@@ -14,6 +14,7 @@ import com.github.caoli5288.vertx.raknet.message.OpenConnectionReply;
 import com.github.caoli5288.vertx.raknet.message.OpenConnectionReply2;
 import com.github.caoli5288.vertx.raknet.message.OpenConnectionRequest;
 import com.github.caoli5288.vertx.raknet.message.OpenConnectionRequest2;
+import com.github.caoli5288.vertx.raknet.message.Reliability;
 import com.github.caoli5288.vertx.raknet.message.UnconnectedPing;
 import com.github.caoli5288.vertx.raknet.message.UnconnectedPong;
 import com.github.caoli5288.vertx.raknet.message.UserData;
@@ -170,7 +171,7 @@ public class RakNetSession implements Handler<DatagramPacket> {
         ConnectionRequest request = new ConnectionRequest();
         request.setGuid(getOptions().getGuid());
         request.setTime(System.currentTimeMillis() / 1000);
-        outbound.send(request.encode());
+        outbound.send(request.encode(), Reliability.RELIABLE);
     }
 
     private void handle(OpenConnectionRequest request) {
@@ -254,7 +255,7 @@ public class RakNetSession implements Handler<DatagramPacket> {
     private void handle0(ConnectedPing ping) {
         ConnectedPong pong = new ConnectedPong();
         pong.setTime(System.currentTimeMillis() / 1000);
-        outbound.send(pong.encode());
+        outbound.send(pong.encode(), Reliability.UNRELIABLE);
     }
 
     private void handle0(ConnectionRequestAccepted handshake) {
@@ -273,7 +274,7 @@ public class RakNetSession implements Handler<DatagramPacket> {
         handshake.setAddress(Utils.resolve(address));
         handshake.setTime(request.getTime());
         handshake.setTime2(System.currentTimeMillis() / 1000);
-        outbound.send(handshake.encode());
+        outbound.send(handshake.encode(), Reliability.RELIABLE);
     }
 
     void send0(ByteBuf buf) {
@@ -284,17 +285,17 @@ public class RakNetSession implements Handler<DatagramPacket> {
         });
     }
 
-    public void send(@NotNull UserData data) {
+    public void send(@NotNull UserData data, @NotNull Reliability reliability) {
         Utils.checkState(state == State.ESTABLISHED);
         ContextInternal context = (ContextInternal) net.getContext();
         // Will check is in context automatic
-        context.execute(() -> outbound.send(data.encode()));
+        context.execute(() -> outbound.send(data.encode(), reliability));
     }
 
-    public void send(@NotNull Buffer buffer) {
+    public void send(@NotNull Buffer buffer, @NotNull Reliability reliability) {
         UserData data = new UserData();
         data.setBody(buffer.getByteBuf());
-        send(data);
+        send(data, reliability);
     }
 
     public RakNetSession connect(@NotNull Handler<AsyncResult<RakNetSession>> handler) {

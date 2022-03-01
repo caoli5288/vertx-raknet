@@ -5,7 +5,7 @@ import com.github.caoli5288.vertx.raknet.message.AckRecord;
 import com.github.caoli5288.vertx.raknet.message.Frame;
 import com.github.caoli5288.vertx.raknet.message.FrameSetPacket;
 import com.github.caoli5288.vertx.raknet.message.NAck;
-import com.github.caoli5288.vertx.raknet.message.Reliable;
+import com.github.caoli5288.vertx.raknet.message.Reliability;
 import com.github.caoli5288.vertx.raknet.util.Utils;
 import io.netty.buffer.ByteBuf;
 import org.jetbrains.annotations.NotNull;
@@ -28,12 +28,12 @@ class OutboundBuffer {
         this.mtu = mtu;
     }
 
-    public void send(ByteBuf buf) {
+    public void send(ByteBuf buf, Reliability reliability) {
         int dataSize = mtu - Constants.FRAME_SET_OVERHEAD;
         if (dataSize >= buf.readableBytes()) {
             FrameSetPacket fp = new FrameSetPacket();
             fp.setSequence(seq());
-            Frame frame = frame();
+            Frame frame = frame(reliability);
             frame.setBody(buf);
             fp.setFrames(Collections.singletonList(frame));
             send(fp);
@@ -42,7 +42,7 @@ class OutboundBuffer {
             for (int i = 0; i < count; i++) {
                 FrameSetPacket fp = new FrameSetPacket();
                 fp.setSequence(seq());
-                Frame frame = frame();
+                Frame frame = frame(reliability);
                 // fragmented
                 frame.setSplit(true);
                 frame.setSplitterId(splitterId++);
@@ -61,10 +61,10 @@ class OutboundBuffer {
     }
 
     @NotNull
-    private Frame frame() {
+    private Frame frame(Reliability reliability) {
         int j = frameId++;
         Frame frame = new Frame();
-        frame.setReliable(Reliable.RELIABLE);
+        frame.setReliability(reliability);// default to RELIABLE_ORDERED
         frame.setId(j);
         return frame;
     }

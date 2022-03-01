@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 @Data
 public class Frame implements Serializable {
 
-    private Reliable reliable;
+    private Reliability reliability;
     private int id;
     private int sequenceId;
     private int channel;
@@ -22,16 +22,16 @@ public class Frame implements Serializable {
     @Override
     public void decode(@NotNull ByteBuf buf) {
         int flags = buf.readUnsignedByte();
-        reliable = Reliable.valueOf(flags >> 5);
+        reliability = Reliability.valueOf(flags >> 5);
         split = (flags & 16) == 16;
         int c = buf.readUnsignedShort() / 8;// body lengths
-        if (reliable.isReliable()) {
+        if (reliability.isReliable()) {
             id = buf.readUnsignedMediumLE();
         }
-        if (reliable.isSequenced()) {
+        if (reliability.isSequenced()) {
             sequenceId = buf.readUnsignedMediumLE();
         }
-        if (reliable.isOrdered()) {
+        if (reliability.isOrdered()) {
             sequenceId = buf.readUnsignedMediumLE();
             channel = buf.readByte();
         }
@@ -51,19 +51,19 @@ public class Frame implements Serializable {
     }
 
     public static void encode(ByteBuf buf, Frame frame) {
-        int flags = frame.getReliable().ordinal() << 5;
+        int flags = frame.getReliability().ordinal() << 5;
         if (frame.isSplit()) {
             flags = Utils.setBitTo1(flags, 4);
         }
         buf.writeByte(flags);
         buf.writeShort(frame.getBody().readableBytes() << 3);
-        if (frame.getReliable().isReliable()) {
+        if (frame.getReliability().isReliable()) {
             buf.writeMediumLE(frame.getId());
         }
-        if (frame.getReliable().isSequenced()) {
+        if (frame.getReliability().isSequenced()) {
             buf.writeMediumLE(frame.sequenceId);
         }
-        if (frame.getReliable().isOrdered()) {
+        if (frame.getReliability().isOrdered()) {
             buf.writeMediumLE(frame.sequenceId);
             buf.writeByte(frame.channel);
         }

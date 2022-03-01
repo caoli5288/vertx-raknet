@@ -1,5 +1,6 @@
 package com.github.caoli5288.vertx.raknet;
 
+import com.github.caoli5288.vertx.raknet.message.Reliability;
 import com.github.caoli5288.vertx.raknet.message.UserData;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -21,7 +22,7 @@ public class Main {
                     net.getVertx().setPeriodic(1000, a -> {
                         UserData data = new UserData();
                         data.setBody(Buffer.buffer("hello").getByteBuf());
-                        session.send(data);
+                        session.send(data, Reliability.RELIABLE_ORDERED);
                     });
                 });
             });

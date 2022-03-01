@@ -5,7 +5,7 @@ import com.github.caoli5288.vertx.raknet.message.AckRecord;
 import com.github.caoli5288.vertx.raknet.message.Frame;
 import com.github.caoli5288.vertx.raknet.message.FrameSetPacket;
 import com.github.caoli5288.vertx.raknet.message.NAck;
-import com.github.caoli5288.vertx.raknet.message.Reliable;
+import com.github.caoli5288.vertx.raknet.message.Reliability;
 import com.github.caoli5288.vertx.raknet.util.FrameJoiner;
 import com.github.caoli5288.vertx.raknet.util.InboundOrder;
 import com.github.caoli5288.vertx.raknet.util.Utils;
@@ -90,11 +90,11 @@ class InboundBuffer implements Handler<FrameSetPacket> {
     }
 
     private InboundOrder getOrder(Frame frame) {
-        Reliable reliable = frame.getReliable();
-        if (reliable.isOrdered()) {
+        Reliability reliability = frame.getReliability();
+        if (reliability.isOrdered()) {
             return orders.get(frame.getChannel());
         }
-        if (reliable.isSequenced()) {
+        if (reliability.isSequenced()) {
             return sequencer;
         }
         return null;
