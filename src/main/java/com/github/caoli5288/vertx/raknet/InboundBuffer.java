@@ -64,6 +64,7 @@ class InboundBuffer implements Handler<FrameSetPacket> {
 
     private void handle(Frame frame) {
         if (frame.isSplit()) {
+            // TODO check already proceed
             FrameJoiner joiner = joiners.computeIfAbsent(frame.getSplitterId(), s -> new FrameJoiner(frame.getSplitSize()));
             joiner.join(frame);
             if (!frame.isSplit()) {
